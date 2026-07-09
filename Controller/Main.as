@@ -6,7 +6,7 @@ void RefreshLeaderboard(){
     // 3-stage update
     // Stage 1: New local PB, not queried API yet. Update leaderboard with PB with empty position and re-sort by time.
     // Stage 2: Get PB position from API. May be delayed (reports the old PB) so retry if necessary up to max.
-    // Stage 3: Get all remainaing positions from API.
+    // Stage 3: Get all remaining positions from API.
 
     if (currentTimePbLocal > 0 && (currentTimePbLocal < currentPbEntry.time || currentPbEntry.time <= 0)) {
         // Stage 1: New local PB, not queried API yet. Update leaderboard with PB with empty position and re-sort by time.
