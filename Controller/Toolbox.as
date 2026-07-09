@@ -27,7 +27,7 @@ bool isAValidMedalTime(LeaderboardEntry@ time) {
  * Needs to be called from a yieldable function
  */
 bool MapHasNadeoLeaderboard(const string &in mapId){
-    auto info = FetchLiveEndpoint(NadeoServices::BaseURLLive() + "/api/token/map/" + mapId);
+    auto info = FetchNadeoEndpoint("NadeoLiveServices", NadeoServices::BaseURLLive() + "/api/token/map/" + mapId);
 	if(info.GetType() == Json::Type::Object){
 		currentMapId = info["mapId"];
 	}
@@ -60,29 +60,11 @@ bool UserCanUseThePlugin(){
  * 
  * Needs to be called from a yieldable function
  */
-Json::Value FetchEndpoint(const string &in route) {
-    while (!NadeoServices::IsAuthenticated("NadeoServices")) {
+Json::Value FetchNadeoEndpoint(const string &in service, const string &in route) {
+    while (!NadeoServices::IsAuthenticated(service)) {
         yield();
     }
-    auto req = NadeoServices::Get("NadeoServices", route);
-    req.Start();
-    while(!req.Finished()) {
-        yield();
-    }
-    return Json::Parse(req.String());
-}
-
-
-/**
- * Fetch an endpoint from the Nadeo Live Services
- * 
- * Needs to be called from a yieldable function
- */
-Json::Value FetchLiveEndpoint(const string &in route) {
-    while (!NadeoServices::IsAuthenticated("NadeoLiveServices")) {
-        yield();
-    }
-    auto req = NadeoServices::Get("NadeoLiveServices", route);
+    auto req = NadeoServices::Get(service, route);
     req.Start();
     while(!req.Finished()) {
         yield();

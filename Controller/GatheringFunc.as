@@ -21,7 +21,7 @@ LeaderboardEntry@ GetPersonalBestEntry() {
     if (network.ClientManiaAppPlayground !is null && network.ClientManiaAppPlayground.Playground !is null && network.ClientManiaAppPlayground.Playground.Map !is null){
         string mapid = network.ClientManiaAppPlayground.Playground.Map.MapInfo.MapUid;
 
-        auto info = FetchLiveEndpoint(NadeoServices::BaseURLLive() + "/api/token/leaderboard/group/Personal_Best/map/"+mapid+"/surround/0/0?onlyWorld=true");
+        auto info = FetchNadeoEndpoint("NadeoLiveServices", NadeoServices::BaseURLLive() + "/api/token/leaderboard/group/Personal_Best/map/"+mapid+"/surround/0/0?onlyWorld=true");
 
         if(info.GetType() != Json::Type::Null) {
             auto tops = info["tops"];
@@ -61,7 +61,7 @@ array<LeaderboardEntry@> GetFriendsEntry(string _friends) {
             + "&accountIdList=" + _friends
             + "&gameMode=TimeAttack";
 
-        auto info = FetchEndpoint(route);
+        auto info = FetchNadeoEndpoint("NadeoServices", route);
         trace(_friends);
         if(info.GetType() == Json::Type::Array) {
             trace(info.Length);
