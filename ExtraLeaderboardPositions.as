@@ -1,26 +1,21 @@
 // ############################## MAIN #############################
 
-
-void Main(){
+void Main() {
 #if TMNEXT
 
     if(!UserCanUseThePlugin()){
         print("Waiting 30 more seconds for permissions...");
-        while(timerStartDelay > 0){
+        // Use local delta sleep tracking instead of an un-ticked global property
+        uint64 permissionTimeout = Time::Now + (30 * 1000);
+        while (Time::Now < permissionTimeout) {
             yield();
         }
         if(!UserCanUseThePlugin()){
             warn("You currently don't have the permissions to use this plugin, you at least need the club edition");
             warn("If you do have the permissions, the plugin checks every 30 seconds and should work when you finished loading into the main menu");
-            timerStartDelay = 30 *1000;
-            while(true){
-                yield();
-                if(timerStartDelay < 0){
-                    if(UserCanUseThePlugin()){
-                        break;
-                    }
-                    timerStartDelay = 30 *1000;
-                }
+            
+            while (!UserCanUseThePlugin()) {
+                sleep(30000); // Sleep the thread cleanly for 30 seconds
             }
         }
         print("Permission granted!");
@@ -31,11 +26,8 @@ void Main(){
     NadeoServices::AddAudience("NadeoLiveServices");
 
     // Wait until the services are authenticated
-    while (!NadeoServices::IsAuthenticated("NadeoServices")) {
-      yield();
-    }
-    while (!NadeoServices::IsAuthenticated("NadeoLiveServices")) {
-      yield();
+    while (!NadeoServices::IsAuthenticated("NadeoServices") || !NadeoServices::IsAuthenticated("NadeoLiveServices")) {
+        yield();
     }
 
     auto app = cast<CTrackMania>(GetApp());
@@ -45,11 +37,20 @@ void Main(){
         //if we're on a new map, the timer is over or a new pb has been made we update the times
         if(refreshPosition){
             if(CanRefresh()){
-                string mapid = network.ClientManiaAppPlayground.Playground.Map.MapInfo.MapUid;
-                if(MapHasNadeoLeaderboard(mapid)){
-                    validMap = true;
-                    RefreshLeaderboard();
-                }else{
+                // Double-guard the playground pointers to eliminate random race-condition crashes
+                if (network.ClientManiaAppPlayground !is null && 
+                    network.ClientManiaAppPlayground.Playground !is null && 
+                    network.ClientManiaAppPlayground.Playground.Map !is null) {
+                    
+                    string mapid = network.ClientManiaAppPlayground.Playground.Map.MapInfo.MapUid;
+                    if(MapHasNadeoLeaderboard(mapid)){
+                        validMap = true;
+                        RefreshLeaderboard();
+                    }else{
+                        validMap = false;
+                        ClearLeaderboard();
+                    }
+                } else {
                     validMap = false;
                     ClearLeaderboard();
                 }
@@ -69,16 +70,21 @@ void Main(){
 /**
  * Checks if we are in a position to refresh the times or not
  */
-bool CanRefresh(){
+bool CanRefresh() {
     auto app = cast<CTrackMania>(GetApp());
+    if (app is null || app.Network is null) return false;
+
     auto network = cast<CTrackManiaNetwork>(app.Network);
 
     //check that we're in a map
-    if (network.ClientManiaAppPlayground is null || network.ClientManiaAppPlayground.Playground is null || network.ClientManiaAppPlayground.Playground.Map is null){
+    if (network.ClientManiaAppPlayground is null || 
+        network.ClientManiaAppPlayground.Playground is null || 
+        network.ClientManiaAppPlayground.Playground.Map is null) {
         return false;
     }
 
     // check that we're not in an invalid gamemode
+    if (network.ServerInfo is null) return false;
     auto ServerInfo = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
     string gamemode = ServerInfo.CurGameModeStr;
 
