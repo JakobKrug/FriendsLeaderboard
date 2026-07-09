@@ -1,9 +1,11 @@
 [meta]
 name     = "Friends Leaderboard"
-author   = "Willgundee"
+author   = "Willgundee & HeHemHem"
 category = "Race"
-version  = "1.1.1"
-
+version  = "1.1.2"
 
 [script]
 dependencies = [ "NadeoServices", "VehicleState" ]
+
+[permissions]
+network = true
